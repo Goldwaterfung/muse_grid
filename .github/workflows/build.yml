@@ -2,6 +2,10 @@ name: Build desktop and Android apps
 
 on:
   push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
   workflow_dispatch:
 
@@ -53,21 +57,25 @@ jobs:
       matrix:
         include:
           - platform: macOS
+            release-slug: macos
             runner: macos-latest
             setup-args: --skip-wasm
             build-command: flutter build macos --release
             artifact-path: build/macos/Build/Products/Release/
           - platform: Windows
+            release-slug: windows
             runner: windows-latest
             setup-args: --skip-wasm
             build-command: flutter build windows --release
             artifact-path: build/windows/x64/runner/Release/
           - platform: Linux
+            release-slug: linux
             runner: ubuntu-latest
             setup-args: --skip-wasm
             build-command: flutter build linux --release
             artifact-path: build/linux/x64/release/bundle/
           - platform: Android
+            release-slug: android
             runner: ubuntu-latest
             setup-args: --skip-wasm --android
             build-command: flutter build apk --release
@@ -75,6 +83,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tags must use the vMAJOR.MINOR.PATCH format (for example, v1.2.3)." >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
 
       - uses: subosito/flutter-action@v2
         with:
@@ -117,11 +136,92 @@ jobs:
         run: dart tool/setup_audio_engine.dart ${{ matrix.setup-args }}
 
       - name: Build app
-        run: ${{ matrix.build-command }}
+        shell: bash
+        run: |
+          if [[ -n "${APP_VERSION:-}" ]]; then
+            ${{ matrix.build-command }} --build-name="$APP_VERSION"
+          else
+            ${{ matrix.build-command }}
+          fi
 
-      - uses: actions/upload-artifact@v4
+      - name: Package macOS and Linux release builds
+        if: startsWith(github.ref, 'refs/tags/v') && (matrix.platform == 'macOS' || matrix.platform == 'Linux')
+        shell: bash
+        env:
+          APP_VERSION: ${{ env.APP_VERSION }}
+          ARTIFACT_PATH: ${{ matrix.artifact-path }}
+          RELEASE_SLUG: ${{ matrix.release-slug }}
+        run: |
+          archive="$RUNNER_TEMP/muse-grid-${RELEASE_SLUG}-${APP_VERSION}.tar.gz"
+          tar -czf "$archive" -C "$ARTIFACT_PATH" .
+          echo "RELEASE_ASSET=$archive" >> "$GITHUB_ENV"
+
+      - name: Package Windows release build
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'Windows'
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ env.APP_VERSION }}
+          ARTIFACT_PATH: ${{ matrix.artifact-path }}
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "muse-grid-windows-$env:APP_VERSION.zip"
+          Compress-Archive -Path (Join-Path $env:ARTIFACT_PATH '*') -DestinationPath $archive
+          "RELEASE_ASSET=$archive" >> $env:GITHUB_ENV
+
+      - name: Prepare Android release APK
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'Android'
+        shell: bash
+        env:
+          APP_VERSION: ${{ env.APP_VERSION }}
+          ARTIFACT_PATH: ${{ matrix.artifact-path }}
+          RELEASE_SLUG: ${{ matrix.release-slug }}
+        run: |
+          asset="$RUNNER_TEMP/muse-grid-${RELEASE_SLUG}-${APP_VERSION}.apk"
+          cp "$ARTIFACT_PATH" "$asset"
+          echo "RELEASE_ASSET=$asset" >> "$GITHUB_ENV"
+
+      - name: Upload build artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
         with:
           name: muse-grid-${{ matrix.platform }}
           path: ${{ matrix.artifact-path }}
           if-no-files-found: error
           retention-days: 7
+
+      - name: Upload release asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: ${{ env.RELEASE_ASSET }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          gh release create \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "MuseGrid $version" \
+            --generate-notes \
+            "$RELEASE_TAG" \
+            "release-artifacts/release-macOS/muse-grid-macos-${version}.tar.gz" \
+            "release-artifacts/release-Windows/muse-grid-windows-${version}.zip" \
+            "release-artifacts/release-Linux/muse-grid-linux-${version}.tar.gz" \
+            "release-artifacts/release-Android/muse-grid-android-${version}.apk"
