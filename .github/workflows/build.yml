@@ -1,0 +1,122 @@
+name: Build desktop and Android apps
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+          pub-cache: true
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config make \
+            libgtk-3-dev liblzma-dev libasound2-dev
+
+      - run: flutter pub get
+
+      - name: Build and test native audio engine
+        run: dart run tool/setup_audio_engine.dart --skip-wasm
+
+      - run: flutter analyze
+      - run: flutter test
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: quality
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macOS
+            runner: macos-latest
+            setup-args: --skip-wasm
+            build-command: flutter build macos --release
+            artifact-path: build/macos/Build/Products/Release/
+          - platform: Windows
+            runner: windows-latest
+            setup-args: --skip-wasm
+            build-command: flutter build windows --release
+            artifact-path: build/windows/x64/runner/Release/
+          - platform: Linux
+            runner: ubuntu-latest
+            setup-args: --skip-wasm
+            build-command: flutter build linux --release
+            artifact-path: build/linux/x64/release/bundle/
+          - platform: Android
+            runner: ubuntu-latest
+            setup-args: --skip-wasm --android
+            build-command: flutter build apk --release
+            artifact-path: build/app/outputs/flutter-apk/app-release.apk
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          channel: stable
+          cache: true
+          pub-cache: true
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config make \
+            libgtk-3-dev liblzma-dev libasound2-dev
+
+      - name: Configure Visual Studio environment
+        if: matrix.platform == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Set up Java
+        if: matrix.platform == 'Android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        if: matrix.platform == 'Android'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK and NDK
+        if: matrix.platform == 'Android'
+        run: sdkmanager --install "platforms;android-37" "ndk;28.2.13676358"
+
+      - run: flutter pub get
+
+      - name: Build native audio engine archives
+        run: dart run tool/setup_audio_engine.dart ${{ matrix.setup-args }}
+
+      - name: Build app
+        run: ${{ matrix.build-command }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: muse-grid-${{ matrix.platform }}
+          path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
+          retention-days: 7
