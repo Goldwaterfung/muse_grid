@@ -10,6 +10,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <thread>
 #include <vector>
 
@@ -100,7 +101,8 @@ TEST_CASE("ButlerWorker records WAV with valid RIFF header, clocks, and SHA-256"
   TempFileGuard cleanup{temp_wav};
   std::filesystem::remove(temp_wav);
 
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(stereoConfig(48000, 2)) == MUSE_OK);
 
   // Advance hardware clock by 256 frames before capture arms.
@@ -180,7 +182,8 @@ TEST_CASE("ButlerWorker records WAV with valid RIFF header, clocks, and SHA-256"
 
 TEST_CASE("ButlerWorker fails closed on capture ring overflow and playback-only init",
           "[butler_worker]") {
-  AudioEngineCore playback_only;
+  auto playback_only_storage = std::make_unique<AudioEngineCore>();
+  auto& playback_only = *playback_only_storage;
   REQUIRE(playback_only.initializeWithConfig(stereoConfig(48000, 0)) == MUSE_OK);
   CHECK(playback_only.prepareCapture("/tmp/muse_pb_only.wav.part") ==
         MUSE_ERR_DEVICE_INIT);
@@ -190,7 +193,8 @@ TEST_CASE("ButlerWorker fails closed on capture ring overflow and playback-only 
   TempFileGuard cleanup{overflow_wav};
   std::filesystem::remove(overflow_wav);
 
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(stereoConfig(48000, 2)) == MUSE_OK);
   REQUIRE(core.prepareCapture(overflow_wav.string().c_str()) == MUSE_OK);
   REQUIRE(std::filesystem::exists(overflow_wav));
@@ -232,7 +236,8 @@ TEST_CASE("ButlerWorker resamples 44.1kHz mono WAV takes, sums overlaps, and wra
   writeMonoF32Wav(wav_a, 44100, std::vector<float>(4410, 0.8f));
   writeMonoF32Wav(wav_b, 44100, std::vector<float>(4410, 0.2f));
 
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(stereoConfig(48000, 2)) == MUSE_OK);
 
   // Take A starts at 0 with explicit clamp duration 400 (shorter than ~4800).
@@ -342,7 +347,8 @@ TEST_CASE("ButlerWorker prefetches paused take without seek, replaces duplicate 
   writeMonoF32Wav(wav_v1, 48000, std::vector<float>(2048, 0.3f));
   writeMonoF32Wav(wav_v2, 48000, std::vector<float>(2048, -0.6f));
 
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(stereoConfig(48000, 2)) == MUSE_OK);
 
   // Fill remaining kMaxActiveTakeRegions - 1 slots far downstream so we also
@@ -488,7 +494,8 @@ TEST_CASE("ButlerWorker resumes paused prefetch after ring saturation clears whi
       mockHalDispose,
   };
 
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   MuseHardwareConfig out_cfg{};
   REQUIRE(core.initializeWithHal(mock_hal, &hal_state, &out_cfg) == MUSE_OK);
   REQUIRE(core.isHalRunning());

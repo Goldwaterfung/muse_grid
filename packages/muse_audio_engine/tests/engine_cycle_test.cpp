@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <limits>
+#include <memory>
 #include <vector>
 
 #include "audio_engine_core.h"
@@ -281,7 +282,8 @@ void assignPatch(AudioEngineCore& core, uint8_t ch, int32_t sf_id) {
 
 TEST_CASE("Three-phase cycle splits sub-block MIDI timing and emits telemetry",
           "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
   const int32_t sf_id = loadTestSf2(core);
   assignPatch(core, 0, sf_id);
@@ -325,7 +327,8 @@ TEST_CASE("Three-phase cycle splits sub-block MIDI timing and emits telemetry",
 
 TEST_CASE("MUT_FLUSH_AND_ADVANCE_EPOCH discards stale epochs and keeps new ones",
           "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
   const int32_t sf_id = loadTestSf2(core);
   assignPatch(core, 0, sf_id);
@@ -369,7 +372,8 @@ TEST_CASE("MUT_FLUSH_AND_ADVANCE_EPOCH discards stale epochs and keeps new ones"
 
 TEST_CASE("Live audition bypasses queued paused events without triggering panic storms",
           "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
   const int32_t sf_id = loadTestSf2(core);
   assignPatch(core, 0, sf_id);
@@ -428,7 +432,8 @@ TEST_CASE("Live audition bypasses queued paused events without triggering panic 
 
 TEST_CASE("Loop-boundary sub-block split wraps playhead without altering epoch",
           "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
 
   MutationCommand loop{};
@@ -479,7 +484,8 @@ TEST_CASE("Loop-boundary sub-block split wraps playhead without altering epoch",
 TEST_CASE("Multi-bus MUT_SET_CHANNEL_MIX supports +6 dB boost and hard L/R isolation",
           "[engine_cycle]") {
   auto renderSoloChannel = [](uint8_t channel, float gain_db, float pan) {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
     const int32_t sf_id = loadTestSf2(core);
     assignPatch(core, channel, sf_id);
@@ -526,7 +532,8 @@ TEST_CASE("Multi-bus MUT_SET_CHANNEL_MIX supports +6 dB boost and hard L/R isola
 
 TEST_CASE("TakePlaybackRingBuffer mixes takes and reports underrun only inside active windows",
           "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
 
   const TakeWindowRange window{128, 256, 1};
@@ -621,7 +628,8 @@ TEST_CASE("Soft limiter, NaN sanitization, and CaptureRingBuffer fail-closed con
     CHECK(limited_pos <= kLimiterCeiling);
     CHECK(limited_neg >= -kLimiterCeiling);
 
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig(2)) == MUSE_OK);
     MutationCommand mon{};
     mon.type = MUT_SET_MONITOR_GAIN;
@@ -641,7 +649,8 @@ TEST_CASE("Soft limiter, NaN sanitization, and CaptureRingBuffer fail-closed con
   }
 
   SECTION("CaptureRingBuffer latches first clock and fails closed on overflow") {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig(2)) == MUSE_OK);
 
     // Advance hardware clock by 256 frames before capture starts.
@@ -689,7 +698,8 @@ TEST_CASE("Soft limiter, NaN sanitization, and CaptureRingBuffer fail-closed con
   }
 
   SECTION("Playback-only device fails closed on prepareCapture and drainCaptureFrames") {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig(0)) == MUSE_OK);
     CHECK(core.prepareCapture("/tmp/muse_no_mic.wav.part") == MUSE_ERR_DEVICE_INIT);
     std::array<float, 16> buf{};
@@ -702,7 +712,8 @@ TEST_CASE("Soft limiter, NaN sanitization, and CaptureRingBuffer fail-closed con
 TEST_CASE("Scheduled watermark underrun, persistent synth suspend, and capture latch re-arming",
           "[engine_cycle]") {
   SECTION("MUT_SET_SCHEDULED_WATERMARK flags event_queue_underrun only for exact active epoch") {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
 
     MutationCommand flush{};
@@ -752,7 +763,8 @@ TEST_CASE("Scheduled watermark underrun, persistent synth suspend, and capture l
   }
 
   SECTION("MUT_SET_SYNTH_SUSPENDED persists across multiple processBlock cycles") {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
     const int32_t sf_id = loadTestSf2(core);
     assignPatch(core, 0, sf_id);
@@ -793,7 +805,8 @@ TEST_CASE("Scheduled watermark underrun, persistent synth suspend, and capture l
   }
 
   SECTION("MUT_SET_CAPTURE_STATE re-arms capture_latch_ across consecutive captures") {
-    AudioEngineCore core;
+    auto core_storage = std::make_unique<AudioEngineCore>();
+    auto& core = *core_storage;
     REQUIRE(core.initializeWithConfig(defaultStereoConfig(2)) == MUSE_OK);
 
     std::vector<float> warmup_out(128 * 2, 0.0f);
@@ -854,7 +867,8 @@ TEST_CASE("Scheduled watermark underrun, persistent synth suspend, and capture l
 TEST_CASE(
     "Loop-pass tagged lookahead events wait for loop wrap instead of firing early",
     "[engine_cycle]") {
-  AudioEngineCore core;
+  auto core_storage = std::make_unique<AudioEngineCore>();
+  auto& core = *core_storage;
   REQUIRE(core.initializeWithConfig(defaultStereoConfig()) == MUSE_OK);
   const int32_t sf_id = loadTestSf2(core);
   assignPatch(core, 0, sf_id);
