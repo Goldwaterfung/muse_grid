@@ -2,6 +2,10 @@
 
 # MuseGrid
 
+<p align="center">
+  <img src="assets/images/cover.png" alt="MuseGrid cover" width="900" />
+</p>
+
 ### Cross-Platform Sheet Music, Dynamic Piano Roll, SoundFont Playback & Live Recording
 
 <p align="center">
