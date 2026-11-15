@@ -32,7 +32,7 @@ When implementing the **planned C/C++ & Wasm audio engine (`packages/muse_audio_
 | **Git** | Source checkout, submodules, CMake `FetchContent` | Official installer (`git-scm.com`) | Pre-installed on GitHub-hosted runners |
 | **CMake** (`>= 3.24`) | *(Planned L1–L3)* Builds upstream `FluidSynth` static lib, Emscripten Wasm (`emcmake cmake`), and offline C++ tests (`Unix Makefiles` / `Xcode` / `MSBuild`; **Ninja is optional**) | Official binaries (`cmake.org`) | `lukka/get-cmake` (optional until `packages/muse_audio_engine/` exists) |
 | **Python 3** | *(Planned Web Wasm)* Required by `emsdk` | Official installer (`python.org`; pre-installed on macOS/Ubuntu runners) | `actions/setup-python` |
-| **Emscripten SDK (`emsdk`)** | *(Planned Web Wasm)* Compiles L2–L3 `engine_core` + `FluidSynth` into `muse_audio_engine.wasm` for `AudioWorklet` (pinned `7.0.0`) | Automated cross-platform via `dart run tool/setup_audio_engine.dart` (installs into `packages/muse_audio_engine/.emsdk/` or `$EMSDK` on Windows/Linux/macOS) | `mymindstorm/setup-emsdk` (`7.0.0` + runner cache) |
+| **Emscripten SDK (`emsdk`)** | *(Planned Web Wasm)* Compiles L2–L3 `engine_core` + `FluidSynth` into `muse_audio_engine.wasm` for `AudioWorklet` (pinned `7.0.0`) | Automated cross-platform via `dart tool/setup_audio_engine.dart` (installs into `packages/muse_audio_engine/.emsdk/` or `$EMSDK` on Windows/Linux/macOS) | `mymindstorm/setup-emsdk` (`7.0.0` + runner cache) |
 | **LLVM / `libclang`** | *(Dev codegen only)* Parses `muse_engine_c_api.h` when regenerating Dart FFI bindings (`dart run tool/ffigen.dart`) | **macOS:** Uses Xcode's bundled `libclang.dylib` automatically (no separate LLVM needed). **Linux:** `libclang-dev`. **Windows:** Official LLVM release (`releases.llvm.org`). | Only needed if a CI job regenerates `ffigen` bindings |
 
 ### 1.3 Target Platform Compilers & Native SDKs
@@ -101,7 +101,7 @@ All packages below are declared in [pubspec.yaml](file:///Users/goldenfung/Docum
 
 ## 4. C/C++ & Wasm Audio Engine Libraries (`packages/muse_audio_engine/`)
 
-All third-party C/C++ sources are **pinned by commit hash** in [CMakeLists.txt](file:///Users/goldenfung/Documents/muse_grid/packages/muse_audio_engine/CMakeLists.txt) (see [DEPS.md](file:///Users/goldenfung/Documents/muse_grid/packages/muse_audio_engine/third_party/DEPS.md)) and installed/verified cross-platform (Windows, Linux, macOS) via `dart run tool/setup_audio_engine.dart`. **Never rely on OS-level library installs** (`apt install libfluidsynth-dev`, `brew install fluid-synth`, etc.).
+All third-party C/C++ sources are **pinned by commit hash** in [CMakeLists.txt](file:///Users/goldenfung/Documents/muse_grid/packages/muse_audio_engine/CMakeLists.txt) (see [DEPS.md](file:///Users/goldenfung/Documents/muse_grid/packages/muse_audio_engine/third_party/DEPS.md)) and installed/verified cross-platform (Windows, Linux, macOS) via `dart tool/setup_audio_engine.dart`. **Never rely on OS-level library installs** (`apt install libfluidsynth-dev`, `brew install fluid-synth`, etc.).
 
 | Library | Scope | Pinning Strategy | Build Configuration & Compliance |
 | :--- | :--- | :--- | :--- |

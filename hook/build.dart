@@ -28,7 +28,7 @@ void main(List<String> args) async {
       throw StateError(
         'Missing prebuilt audio engine static archives for '
         '${targetOS.name}/${targetArch.name} in ${cmakeBuildUri.toFilePath()}. '
-        'Run `dart run tool/setup_audio_engine.dart` (for host and macOS '
+        'Run `dart tool/setup_audio_engine.dart` (for host and macOS '
         'universal architectures) or configure and build CMake into '
         '`$cmakeBuildRelDir` before building.',
       );
@@ -183,7 +183,7 @@ List<String> _resolveIncludeDirectories({
       throw StateError(
         'Missing audio engine dependency include directory for '
         '${targetOS.name}/${targetArch.name}: $includePath. '
-        'Run `dart run tool/setup_audio_engine.dart` before building.',
+        'Run `dart tool/setup_audio_engine.dart` before building.',
       );
     }
   }

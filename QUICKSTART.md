@@ -204,7 +204,7 @@ make --version
 
 From the `muse_grid` folder, run:
 ```bash
-dart run tool/setup_audio_engine.dart --skip-wasm
+dart tool/setup_audio_engine.dart --skip-wasm
 ```
 
 What this does automatically:
@@ -251,7 +251,7 @@ What this does automatically:
 4. **Cross-compile the audio engine static archives for Android:**
    Run the automated setup script with `--android` (defaults to API `30` matching `minSdk = 30`, building `arm64-v8a`, `armeabi-v7a`, and `x86_64` into `packages/muse_audio_engine/.build_android_<arch>/`):
    ```bash
-   dart run tool/setup_audio_engine.dart --skip-wasm --android
+   dart tool/setup_audio_engine.dart --skip-wasm --android
    ```
    *(If you already completed Step 4.2, you can add `--skip-native` to skip rebuilding the desktop host engine. You can also pass `--android-abis=arm64-v8a`, `--android-ndk=<path>`, or `--android-api=<level>` to customize the build.)*
 5. Connect an Android device (with USB Debugging enabled) or start an emulator, then run:
@@ -269,7 +269,7 @@ What this does automatically:
 2. **Cross-compile the audio engine static archives for iOS:**
    Run the automated setup script with `--ios` to build `iphoneos` (`arm64`) and `iphonesimulator` (`arm64` and `x86_64`) static archives into `packages/muse_audio_engine/.build_ios_<sdk>_<arch>/`:
    ```bash
-   dart run tool/setup_audio_engine.dart --skip-wasm --ios
+   dart tool/setup_audio_engine.dart --skip-wasm --ios
    ```
    *(Add `--skip-native` if you already built the host macOS engine in Step 4.2.)*
 3. Run on a connected iPhone/iPad or iOS Simulator, or build without codesigning:
@@ -287,7 +287,7 @@ What this does automatically:
 - **`Missing prebuilt audio engine static archives for ...`**
   - You ran a desktop/native `flutter run`, `flutter build`, or `flutter test` before preparing the C/C++ audio libraries. Run:
     ```bash
-    dart run tool/setup_audio_engine.dart --skip-wasm
+    dart tool/setup_audio_engine.dart --skip-wasm
     ```
 - **No sound when running in Chrome or Edge**
   - Click the **"Click to Enable Web Audio Engine"** button in the top banner inside MuseGrid. Browsers keep audio muted until you click.

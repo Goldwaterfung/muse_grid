@@ -177,7 +177,7 @@ Implements the real-time safe C/C++ audio synthesis, SPSC lock-free ring buffers
 * **Checkpoint — Phase 2 Verification:**
   * `cmake --build packages/muse_audio_engine/.build --config Release --parallel`
   * `ctest --test-dir packages/muse_audio_engine/.build --build-config Release --output-on-failure`
-  * `dart run tool/setup_audio_engine.dart` (verifies both Native CTest suite and Emscripten Wasm compilation)
+  * `dart tool/setup_audio_engine.dart` (verifies both Native CTest suite and Emscripten Wasm compilation)
 
 ---
 
@@ -228,7 +228,7 @@ Connects `engine_core` to hardware duplex audio (`miniaudio` on Native, `AudioWo
   * Implement `WebAudioWorkletBridge` in `lib/bridge/web/web_audio_worklet_bridge.dart` using `package:web` and `dart:js_interop` (enforcing user-gesture `AudioContext.resume()`, `kMaxWebSoundFontBytes`, and stopped-transport SF2 load policy).
 * **Checkpoint — Phase 3 Verification:**
   * `dart run tool/ffigen.dart`
-  * `dart run tool/setup_audio_engine.dart`
+  * `dart tool/setup_audio_engine.dart`
   * `flutter analyze`
   * `flutter test test/bridge/native_audio_bridge_test.dart`
   * `flutter build web --wasm`
@@ -430,7 +430,7 @@ Implements the 5 UI controllers, interactive 5-line staff view (`crisp_notation`
    ```
 2. **Emscripten WebAssembly Engine Build Check (L1–L3 Web):**
    ```sh
-   dart run tool/setup_audio_engine.dart
+   dart tool/setup_audio_engine.dart
    ```
 3. **Static Analysis, Layer Isolation & Dart/Flutter Test Suite (Bridge, Storage, L4, L5):**
    ```sh

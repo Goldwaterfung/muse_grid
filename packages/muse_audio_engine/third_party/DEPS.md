@@ -3,7 +3,7 @@
 All third-party C/C++ dependencies and Emscripten SDK versions for `packages/muse_audio_engine/` are pinned to exact release tags and commit hashes per [toolchain_and_dependencies.md](file:///Users/goldenfung/Documents/muse_grid/toolchain_and_dependencies.md) and installed via:
 
 ```sh
-dart run tool/setup_audio_engine.dart
+dart tool/setup_audio_engine.dart
 ```
 
 | Dependency | Version / Tag | Commit / Release Ref | License | Integration Method |

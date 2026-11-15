@@ -35,7 +35,7 @@ jobs:
       - run: flutter pub get
 
       - name: Build and test native audio engine
-        run: dart run tool/setup_audio_engine.dart --skip-wasm
+        run: dart tool/setup_audio_engine.dart --skip-wasm
 
       - run: flutter analyze
       - run: flutter test
@@ -109,7 +109,7 @@ jobs:
       - run: flutter pub get
 
       - name: Build native audio engine archives
-        run: dart run tool/setup_audio_engine.dart ${{ matrix.setup-args }}
+        run: dart tool/setup_audio_engine.dart ${{ matrix.setup-args }}
 
       - name: Build app
         run: ${{ matrix.build-command }}

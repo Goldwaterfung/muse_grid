@@ -6,7 +6,7 @@ import 'dart:io';
 /// and `emsdk`).
 ///
 /// Run from the repository root on macOS, Linux, or Windows:
-///   dart run tool/setup_audio_engine.dart
+///   dart tool/setup_audio_engine.dart
 abstract final class _SetupConstants {
   static const String pinnedEmsdkVersion = '7.0.0';
   static const String emsdkRepoUrl =
@@ -264,7 +264,7 @@ Future<void> main(List<String> args) async {
 void _printUsage() {
   stdout.writeln(
     '''
-Usage: dart run tool/setup_audio_engine.dart [options]
+Usage: dart tool/setup_audio_engine.dart [options]
 
 Installs Emscripten SDK (${_SetupConstants.pinnedEmsdkVersion}) and fetches/builds all pinned C/C++
 audio engine dependencies (FluidSynth, miniaudio, PicoSHA2, Catch2) via CMake.
