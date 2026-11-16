@@ -267,11 +267,23 @@ TEST_CASE("ButlerWorker resamples 44.1kHz mono WAV takes, sums overlaps, and wra
 
   const auto wait_deadline =
       std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
-  while (core.takePlaybackReadAvailable() < 1024 &&
-         std::chrono::steady_clock::now() < wait_deadline) {
+  bool prefetch_ready = false;
+  std::array<float, 16 * 2> settle_out{};
+  while (std::chrono::steady_clock::now() < wait_deadline) {
+    REQUIRE(core.processBlock(nullptr, settle_out.data(), 16) == MUSE_OK);
+
+    const TakePlaybackStereoFrame* first =
+        core.takePlaybackRingBuffer().peek();
+    prefetch_ready =
+        first != nullptr && first->epoch == core.activeEpochAtomic() &&
+        first->target_sample_frame == 0 &&
+        core.takePlaybackReadAvailable() >= 1024;
+    if (prefetch_ready) {
+      break;
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  REQUIRE(core.takePlaybackReadAvailable() >= 1024);
+  REQUIRE(prefetch_ready);
 
   MutationCommand play_cmd{};
   play_cmd.type = MUT_SET_PLAYING;
