@@ -218,42 +218,14 @@ What this does automatically:
   ```powershell
   flutter run -d windows
   ```
-  *(To create a release build: `flutter build windows`)*
 - **macOS:**
   ```bash
   flutter run -d macos
   ```
-  *(To create a release build: `flutter build macos`)*
 - **Linux:**
   ```bash
   flutter run -d linux
   ```
-  *(To create a release build: `flutter build linux`)*
-
-### 4.4 Create macOS and Windows Installers
-
-Build the release app for the target operating system first, then package it:
-
-- **macOS:** After `flutter build macos --release`, create a compressed disk image:
-  ```bash
-  tool/package_macos_dmg.sh \
-    build/macos/Build/Products/Release/muse_grid.app \
-    {version_number}
-  ```
-  This creates `build/installer/muse-grid-macos-{version_number}.dmg`. Users can open the
-  image and drag MuseGrid into Applications.
-- **Windows:** Install [Inno Setup 6](https://jrsoftware.org/isinfo.php), then
-  run in PowerShell after `flutter build windows --release`:
-  ```powershell
-  .\tool\package_windows_installer.ps1 -AppVersion {version_number}
-  ```
-  This creates `build\installer\muse-grid-windows-{version_number}-setup.exe`, with
-  Start Menu and optional desktop shortcuts and an uninstaller.
-
-Both packaging commands accept the app version explicitly. Versioned Git tags
-also make the release workflow attach a DMG and Windows setup executable to the
-GitHub release, with generated release notes and a listing of every commit
-since the previous tag. The generated packages are not code-signed or notarized.
 
 ---
 
